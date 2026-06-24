@@ -150,7 +150,7 @@ curl -X POST https://<你的n8n地址>/webhook/data \
 ## 🧑‍💻 作者
 
 - **GitHub**: [nna567](https://github.com/nna567)
-- **邮箱**: Jiewen595@gmail.com
+- **邮箱**: nna0905gg@gmail.com
 
 ---
 
