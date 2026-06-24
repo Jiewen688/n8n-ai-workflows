@@ -1,0 +1,25 @@
+# n8n 敏感信息
+*.env
+.env.*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 大型安装包
+*.msi
+*.exe
+
+# IDE
+.vscode/
+.idea/
+
+# n8n 自己的文件夹
+.agents/
+
+# 无关文件
+*.png
+*.jpg
+*.jpeg
+api.txt

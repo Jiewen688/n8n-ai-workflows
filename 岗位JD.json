@@ -1,0 +1,406 @@
+{
+  "name": "岗位JD",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "job-analyzer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        96,
+        0
+      ],
+      "id": "a54e3329-a5df-48d9-9f57-0f45d0155b12",
+      "name": "Webhook",
+      "webhookId": "de4c7f25-a7fb-4e87-b991-6f1f8f05b039"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=岗位JD：\n\n{{ $json.body.JD }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "你是一位资深招聘顾问。  用户接下来会发给你一份岗位JD。  请严格分析岗位要求，并按照指定JSON格式返回结果。  规则：  1. 提取岗位最重要的5项硬技能    - 仅保留硬技能    - 按重要程度排序  2. 判断岗位等级    - 只能返回：      初级      中级      高级  3. 预测10个高频面试问题    - 覆盖基础知识    - 覆盖业务场景    - 覆盖实操案例  4. 给出简历优化建议    - 技能匹配    - 经历优化    - 关键词补充    - 避坑要点  5. 总结岗位核心职责  输出格式：  {   \"top_5_skills\": [     \"\",     \"\",     \"\",     \"\",     \"\"   ],   \"experience_level\": \"\",   \"interview_questions\": [     {       \"question\": \"\",       \"type\": \"基础/业务/实操\",       \"purpose\": \"\"     }   ],   \"resume_optimization\": {     \"skills_match\": \"\",     \"experience_improvement\": \"\",     \"keywords_to_add\": [],     \"pitfalls\": \"\"   },   \"summary\": \"\" }  要求：  - 只返回JSON - 不要Markdown - 不要代码块 - 不要解释 - 保证JSON合法可解析"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        320,
+        0
+      ],
+      "id": "8fccac1f-5df4-484f-a562-5d5b094f285a",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-v4-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        320,
+        208
+      ],
+      "id": "4a62b273-fdf1-406c-80dd-61037c0cf95a",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "qLPc8DUaQlLqR79D",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\n{\n  success: true,\n  message: \"岗位分析已完成，并已写入 Google Sheets\",\n  experience_level: $json.experience_level,\n  top_5_skills: $json.top_5_skills,\n  summary: $json.summary\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "1baffb6a-f5e7-4c7e-993d-2659a6641b08",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b8b6b46c-02bc-4bda-b63f-54b945249589",
+              "name": "experience_level",
+              "value": "={{ $json.analysis.experience_level }}",
+              "type": "string"
+            },
+            {
+              "id": "0c69c86c-a7cc-4a93-9fa9-a13accd6088b",
+              "name": "top_5_skills",
+              "value": "={{ $json.analysis.top_5_skills.join('、') }}",
+              "type": "string"
+            },
+            {
+              "id": "238dae9f-2702-4775-9c2c-82551a27e86a",
+              "name": "summary",
+              "value": "={{ $json.analysis.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "18a73c7f-40ea-4fe6-a6c4-753865f1d966",
+              "name": "resume_skills_match",
+              "value": "={{ $json.analysis.resume_optimization.skills_match }}",
+              "type": "string"
+            },
+            {
+              "id": "d16f0954-03e8-419c-ab87-ffec0e97e96f",
+              "name": "resume_experience_improvement",
+              "value": "={{ $json.analysis.resume_optimization.experience_improvement }}",
+              "type": "string"
+            },
+            {
+              "id": "c2524584-cf84-45e1-b45f-bec5e05f9558",
+              "name": "resume_keywords_to_add",
+              "value": "={{ $json.analysis.resume_optimization.keywords_to_add.join('、') }}",
+              "type": "string"
+            },
+            {
+              "id": "164498e0-b638-4f4f-a66e-5d13f7b4e37d",
+              "name": "resume_pitfalls",
+              "value": "={{ $json.analysis.resume_optimization.pitfalls }}",
+              "type": "string"
+            },
+            {
+              "id": "658dff34-a2c0-4cf0-8590-4c65ba15f589",
+              "name": "interview_questions_text",
+              "value": "={{ $json.analysis.interview_questions.map((q, i) => `${i + 1}. ${q.question}（${q.type}：${q.purpose}）`).join('；') }}",
+              "type": "string"
+            },
+            {
+              "id": "9e79f7cb-5d23-4812-b40c-66eec8148cd0",
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "e645c2a6-8ea4-4703-bc3d-d73da66a6590",
+              "name": "original_jd",
+              "value": "={{ $('Webhook').item.json.body.JD }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        0
+      ],
+      "id": "c0fa978c-8635-42f2-8dec-8452974ded30",
+      "name": "整理表格字段"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "265a1f48-7648-482e-9a22-09ef01cea193",
+              "name": "analysis",
+              "value": "={{ JSON.parse($json.text) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        656,
+        0
+      ],
+      "id": "2a55df3a-0b2c-43e9-9a15-03885c4cfeed",
+      "name": "解析AI结果"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1fbTbeU-LwuCzOJPBlz7y5rve1Q4c0iGFCS6M7KRBWeU/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "工作表1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "original_jd",
+              "displayName": "original_jd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "experience_level",
+              "displayName": "experience_level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "top_5_skills",
+              "displayName": "top_5_skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "resume_skills_match",
+              "displayName": "resume_skills_match",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "resume_experience_improvement",
+              "displayName": "resume_experience_improvement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "resume_keywords_to_add",
+              "displayName": "resume_keywords_to_add",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "resume_pitfalls",
+              "displayName": "resume_pitfalls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "interview_questions_text",
+              "displayName": "interview_questions_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "6768a22e-acd2-4f3f-8b57-95872ca98d39",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Bxq24WGGNNTgqds2",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "解析AI结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理表格字段": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析AI结果": {
+      "main": [
+        [
+          {
+            "node": "整理表格字段",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e4cad2af-52b9-4c96-9b23-a863ca2b6290",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b07e6ede6713c3a37f2f278a104ebe48dba9da9da73a864c40d17dba8a7e2fdb"
+  },
+  "nodeGroups": [],
+  "id": "vUuexCw7TIvR1KTB",
+  "tags": []
+}

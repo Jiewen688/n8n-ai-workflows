@@ -1,0 +1,337 @@
+{
+  "name": "AI内容运营助手",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "data",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "3040dc0c-6067-4acb-acf9-9b1331eb3870",
+      "name": "Webhook",
+      "webhookId": "2104a01a-d400-4266-a04f-d45c34454ed1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\n{\n  success: true,\n  message: \"AI内容运营素材生成成功，并已写入Google Sheets\",\n  data: {\n    created_at: $(\"整理表格字段\").item.json.created_at,\n    original_news: $(\"整理表格字段\").item.json.original_news,\n    xiaohongshu_titles: $(\"整理表格字段\").item.json.xiaohongshu_titles,\n    wechat_titles: $(\"整理表格字段\").item.json.wechat_titles,\n    short_video_script: $(\"整理表格字段\").item.json.short_video_script,\n    hashtags: $(\"整理表格字段\").item.json.hashtags\n  }\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        976,
+        0
+      ],
+      "id": "541e5588-018d-4a7f-9db9-fb41ab60928d",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是一个专业的新媒体内容运营助手。\n\n请根据下面的新闻内容，生成适合内容运营使用的素材。\n\n要求：\n1. 输出必须是标准 JSON\n2. 不要输出解释文字\n3. 不要使用 Markdown\n4. 不要使用 ```json 代码块\n5. 所有字段必须完整\n\n输出格式如下：\n\n{\n  \"xiaohongshu_titles\": [\n    \"小红书标题1\",\n    \"小红书标题2\",\n    \"小红书标题3\"\n  ],\n  \"wechat_titles\": [\n    \"公众号标题1\",\n    \"公众号标题2\",\n    \"公众号标题3\"\n  ],\n  \"short_video_script\": {\n    \"opening\": \"开头3秒钩子\",\n    \"content\": \"短视频正文脚本\",\n    \"ending\": \"结尾引导语\"\n  },\n  \"hashtags\": [\n    \"标签1\",\n    \"标签2\",\n    \"标签3\",\n    \"标签4\",\n    \"标签5\"\n  ]\n}\n\n新闻内容：\n{{ $json.body.news }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        32,
+        0
+      ],
+      "id": "852188ce-0f4c-4071-ac49-534703e718a4",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        32,
+        208
+      ],
+      "id": "0d5ee8a8-5d3c-4538-83fd-83b1a7ef424b",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "qLPc8DUaQlLqR79D",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "17ff5c40-08e8-42c7-b815-fad44d46f2d8",
+              "name": "data",
+              "value": "={{ JSON.parse($json.text) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        0
+      ],
+      "id": "c964c03a-4fe8-42cf-aa51-30aba2f748a5",
+      "name": "解析AI结果"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8864ddf4-0af3-4ee3-8f18-cb99f3b47753",
+              "name": "original_news",
+              "value": "={{ $(\"Webhook\").item.json.body.news }}",
+              "type": "string"
+            },
+            {
+              "id": "df093395-7ea6-46b9-84c3-992194d1af70",
+              "name": "xiaohongshu_titles",
+              "value": "={{ $json.data.xiaohongshu_titles.join('、') }}",
+              "type": "string"
+            },
+            {
+              "id": "2597ab36-f7e5-4a3c-bfa8-96afffb76601",
+              "name": "wechat_titles",
+              "value": "={{ $json.data.wechat_titles.join('、') }}",
+              "type": "string"
+            },
+            {
+              "id": "abeb3bb1-c9cb-452f-a52e-cf1fb3487670",
+              "name": "short_video_script",
+              "value": "={{ \n\"开头：\" + $json.data.short_video_script.opening \n+ \"\\n正文：\" + $json.data.short_video_script.content \n+ \"\\n结尾：\" + $json.data.short_video_script.ending \n}}",
+              "type": "string"
+            },
+            {
+              "id": "88811f70-757b-4b6e-9e9f-c3fbe13632ce",
+              "name": "hashtags",
+              "value": "={{ $json.data.hashtags.join('、') }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfa6889-3194-46b0-91c1-0c8707da722a",
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        0
+      ],
+      "id": "310f31f8-0974-4586-a94d-ecf4514c3da7",
+      "name": "整理表格字段"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "11-6S9kjype3HD475n2S1H6QCAjlZvqFQdB0clrQMTiA",
+          "mode": "list",
+          "cachedResultName": "AI内容运营助手",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11-6S9kjype3HD475n2S1H6QCAjlZvqFQdB0clrQMTiA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "工作表2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11-6S9kjype3HD475n2S1H6QCAjlZvqFQdB0clrQMTiA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "created_at": "={{ $json.created_at }}",
+            "original_news": "={{ $json.original_news }}",
+            "xiaohongshu_titles": "={{ $json.xiaohongshu_titles }}",
+            "wechat_titles": "={{ $json.wechat_titles }}",
+            "short_video_script": "={{ $json.short_video_script }}",
+            "hashtags": "={{ $json.hashtags }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "original_news",
+              "displayName": "original_news",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "xiaohongshu_titles",
+              "displayName": "xiaohongshu_titles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "wechat_titles",
+              "displayName": "wechat_titles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "short_video_script",
+              "displayName": "short_video_script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        0
+      ],
+      "id": "24cee35b-0815-45de-9b80-d155871cf9a0",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Bxq24WGGNNTgqds2",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "解析AI结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析AI结果": {
+      "main": [
+        [
+          {
+            "node": "整理表格字段",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "整理表格字段": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4c617a38-24b6-436b-a39a-73bcc8fac009",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b07e6ede6713c3a37f2f278a104ebe48dba9da9da73a864c40d17dba8a7e2fdb"
+  },
+  "nodeGroups": [],
+  "id": "NgRbvbmxrnPWvh21",
+  "tags": []
+}
